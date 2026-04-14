@@ -107,6 +107,53 @@ func (d *Display) ShowAuthenticating() error {
 	return d.WriteImage(img)
 }
 
+// ShowProgress draws a progress bar at the top of the screen.
+func (d *Display) ShowProgress(bytesRead, totalBytes int) error {
+	img := newScreen()
+
+	// Progress bar at top
+	drawProgressBar(img, bytesRead, totalBytes)
+
+	// Status text below
+	pct := 0
+	if totalBytes > 0 {
+		pct = bytesRead * 100 / totalBytes
+	}
+	text := fmt.Sprintf("READING PHOTO  %d%%", pct)
+	drawTextCentered(img, text, Width/2, 30, ScaleMedium, colorGold)
+
+	return d.WriteImage(img)
+}
+
+// drawProgressBar draws a horizontal progress bar across the top of the screen.
+func drawProgressBar(img *image.RGBA, current, total int) {
+	const barY = 4
+	const barH = 12
+	const barMargin = 20
+
+	// Background bar
+	for x := barMargin; x < Width-barMargin; x++ {
+		for y := barY; y < barY+barH; y++ {
+			img.SetRGBA(x, y, color.RGBA{0x30, 0x30, 0x30, 0xFF})
+		}
+	}
+
+	// Filled portion
+	barW := Width - 2*barMargin
+	fillW := 0
+	if total > 0 {
+		fillW = current * barW / total
+		if fillW > barW {
+			fillW = barW
+		}
+	}
+	for x := barMargin; x < barMargin+fillW; x++ {
+		for y := barY; y < barY+barH; y++ {
+			img.SetRGBA(x, y, colorGreen)
+		}
+	}
+}
+
 func (d *Display) ShowResult(mrz *emrtd.MRZData, faceJPEG []byte) error {
 	img := newScreen()
 
@@ -161,11 +208,14 @@ func (d *Display) ShowResult(mrz *emrtd.MRZData, faceJPEG []byte) error {
 	if faceJPEG != nil {
 		faceImg := decodeFaceImage(faceJPEG)
 		if faceImg != nil {
-			drawScaledImage(img, faceImg, 490, 20, 280, 440)
+			drawScaledImage(img, faceImg, 490, 20, 280, 420)
 		} else {
 			drawTextAt(img, fmt.Sprintf("FACE: %dB", len(faceJPEG)), 500, 200, ScaleSmall, colorGold)
 		}
 	}
+
+	// "Scan again" prompt at bottom
+	drawTextCentered(img, "SCAN MRZ QR CODE FOR NEXT READ", Width/2, Height-ScaleSmall*7-8, ScaleSmall, colorDimGray)
 
 	return d.WriteImage(img)
 }

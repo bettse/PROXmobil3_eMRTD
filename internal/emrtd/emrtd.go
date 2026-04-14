@@ -13,6 +13,9 @@ import (
 
 var emrtdAID, _ = hex.DecodeString("A0000002471001")
 
+// ProgressFunc is called during file reads with (bytesRead, totalBytes).
+type ProgressFunc func(bytesRead, totalBytes int)
+
 // ReadResult holds the data read from an eMRTD.
 type ReadResult struct {
 	MRZ      *MRZData // Parsed DG1
@@ -21,7 +24,8 @@ type ReadResult struct {
 
 // Read performs the full eMRTD reading sequence:
 // SELECT AID → BAC → read DG1 → read DG2.
-func Read(reader *ipp.Reader, mrzInfo *bac.MRZInfo) (*ReadResult, error) {
+// The optional progress callback is called during DG2 reads.
+func Read(reader *ipp.Reader, mrzInfo *bac.MRZInfo, progress ProgressFunc) (*ReadResult, error) {
 	// SELECT eMRTD application
 	reply, err := reader.SendAPDU(0x00, 0xA4, 0x04, 0x0C, emrtdAID, 0)
 	if err != nil {
@@ -56,7 +60,7 @@ func Read(reader *ipp.Reader, mrzInfo *bac.MRZInfo) (*ReadResult, error) {
 	result := &ReadResult{}
 
 	// Read DG1 (MRZ)
-	dg1Raw, err := readFile(reader, sec, 0x01, 0x01)
+	dg1Raw, err := readFile(reader, sec, 0x01, 0x01, nil)
 	if err != nil {
 		return nil, fmt.Errorf("read DG1: %w", err)
 	}
@@ -66,8 +70,8 @@ func Read(reader *ipp.Reader, mrzInfo *bac.MRZInfo) (*ReadResult, error) {
 		log.Printf("DG1 parse warning: %v", err)
 	}
 
-	// Read DG2 (face image)
-	dg2Raw, err := readFile(reader, sec, 0x01, 0x02)
+	// Read DG2 (face image) with progress callback
+	dg2Raw, err := readFile(reader, sec, 0x01, 0x02, progress)
 	if err != nil {
 		log.Printf("DG2 read failed (non-fatal): %v", err)
 	} else {
@@ -79,7 +83,7 @@ func Read(reader *ipp.Reader, mrzInfo *bac.MRZInfo) (*ReadResult, error) {
 }
 
 // readFile selects and reads an EF using secure messaging.
-func readFile(reader *ipp.Reader, sec *sm.SecureMessaging, fid1, fid2 byte) ([]byte, error) {
+func readFile(reader *ipp.Reader, sec *sm.SecureMessaging, fid1, fid2 byte, progress ProgressFunc) ([]byte, error) {
 	// SELECT EF
 	fileID := []byte{fid1, fid2}
 	if err := sendSecure(reader, sec, 0x00, 0xA4, 0x02, 0x0C, fileID, 0); err != nil {
@@ -119,6 +123,9 @@ func readFile(reader *ipp.Reader, sec *sm.SecureMessaging, fid1, fid2 byte) ([]b
 		}
 		data = append(data, chunk...)
 		offset += len(chunk)
+		if progress != nil {
+			progress(offset, fileSize)
+		}
 		if len(chunk) == 0 {
 			break
 		}

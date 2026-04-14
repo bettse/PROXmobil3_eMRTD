@@ -47,8 +47,8 @@
 ## To Test Further
 
 - [ ] Barcode scanner MRZ QR code input
-- [ ] Display rendering quality check
-- [ ] Face image rendering on framebuffer
+- [x] Display rendering quality check
+- [x] Face image rendering on framebuffer
 - [ ] Error handling: wrong MRZ, card removed mid-read
 - [ ] Long-running stability
 

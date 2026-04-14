@@ -19,7 +19,7 @@ import (
 
 const (
 	defaultNFCPort     = "/dev/ttymxc3"
-	defaultBarcodePort = "/dev/ttyS5"
+	defaultBarcodePort = "/dev/ttyUSB0"
 	watchdogPort       = "/dev/ttymxc2"
 
 	statusPingInterval = 25 * time.Second
@@ -77,6 +77,7 @@ func main() {
 	log.Println("Ready")
 
 	// Main loop
+	firstRun := true
 	for {
 		sdNotify("WATCHDOG=1")
 
@@ -89,9 +90,15 @@ func main() {
 			}
 			log.Printf("MRZ from flag: doc=%s", mrzInfo.DocumentNumber)
 		} else {
-			if disp != nil {
-				disp.ShowWaitingForMRZ()
+			// On first run, show the full "SCAN MRZ" screen.
+			// On subsequent runs after a successful read, the result screen
+			// is still showing with "SCAN MRZ QR CODE" at the bottom.
+			if firstRun {
+				if disp != nil {
+					disp.ShowWaitingForMRZ()
+				}
 			}
+			firstRun = false
 			log.Println("Waiting for MRZ QR code scan...")
 			mrzString, err := readBarcode(*barcodePort)
 			if err != nil {
@@ -99,6 +106,7 @@ func main() {
 				if disp != nil {
 					disp.ShowError(err.Error())
 				}
+				firstRun = true // show full MRZ screen on retry
 				time.Sleep(3 * time.Second)
 				continue
 			}
@@ -109,6 +117,7 @@ func main() {
 				if disp != nil {
 					disp.ShowError("BAD MRZ: "+err.Error())
 				}
+				firstRun = true
 				time.Sleep(3 * time.Second)
 				continue
 			}
@@ -135,8 +144,14 @@ func main() {
 		time.Sleep(postDetectDelay)
 		sdNotify("WATCHDOG=1")
 
-		// Step 3: Read eMRTD
-		result, err := emrtd.Read(reader, mrzInfo)
+		// Step 3: Read eMRTD (with progress display for DG2)
+		var progressFunc emrtd.ProgressFunc
+		if disp != nil {
+			progressFunc = func(bytesRead, totalBytes int) {
+				disp.ShowProgress(bytesRead, totalBytes)
+			}
+		}
+		result, err := emrtd.Read(reader, mrzInfo, progressFunc)
 
 		// Release card regardless of outcome
 		reader.ReleaseCard()
@@ -147,6 +162,8 @@ func main() {
 				disp.ShowError(err.Error())
 			}
 			reader.Buzzer(300, 500)
+			firstRun = true
+			time.Sleep(resultDisplayTime)
 		} else {
 			log.Println("eMRTD read successful")
 			if result.MRZ != nil {
@@ -164,9 +181,17 @@ func main() {
 				disp.ShowResult(result.MRZ, result.FaceJPEG)
 			}
 			reader.Buzzer(2000, 150)
-		}
 
-		time.Sleep(resultDisplayTime)
+			// When using barcode mode, keep showing results until next scan.
+			// The next iteration of the loop will show "SCAN MRZ QR CODE"
+			// via the result screen's bottom prompt, then block on barcode read.
+			if *mrzFlag != "" {
+				time.Sleep(resultDisplayTime)
+			}
+			// In barcode mode, fall through immediately — the result screen
+			// already shows "SCAN MRZ QR CODE" at the bottom, and the next
+			// loop iteration will block on readBarcode().
+		}
 	}
 }
 
