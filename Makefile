@@ -4,8 +4,9 @@ GOARM   := 7
 TARGET  := root@10.0.1.68
 BINARY  := emrtd
 DEPLOY_DIR := /init/emrtd
+USB_DIR := /Volumes/MP_SD
 
-.PHONY: build deploy deploy-binary clean
+.PHONY: build deploy deploy-binary clean usb
 
 build:
 	GOOS=$(GOOS) GOARCH=$(GOARCH) GOARM=$(GOARM) CGO_ENABLED=0 \
@@ -17,3 +18,8 @@ deploy-binary: build
 
 clean:
 	rm -f $(BINARY)
+
+usb: build
+	install autorun.sh ${USB_DIR}/
+	install -d ${USB_DIR}/bin/
+	install ${BINARY} ${USB_DIR}/bin/

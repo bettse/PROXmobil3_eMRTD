@@ -110,9 +110,9 @@ func (r *Reader) Init() error {
 	r.SendFrame(MsgStatus, nil)
 
 	log.Println("Waiting for reader heartbeat or status reply...")
-	f := r.WaitForFrame([]byte{MsgHeartbeat, MsgStartup, MsgStatusReply}, 30*time.Second)
+	f := r.WaitForFrame([]byte{MsgHeartbeat, MsgStartup, MsgStatusReply}, 60*time.Second)
 	if f == nil {
-		return fmt.Errorf("no response from reader within 30s — is the cVEND powered on?")
+		return fmt.Errorf("no response from reader within 60s — is the cVEND powered on?")
 	}
 	log.Printf("Reader alive (got %s)", MsgName(f.MsgType))
 
