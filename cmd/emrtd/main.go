@@ -122,6 +122,7 @@ func main() {
 				continue
 			}
 			log.Printf("MRZ parsed: doc=%s", mrzInfo.DocumentNumber)
+			reader.Buzzer(1200, 100)
 		}
 
 		// Step 2: Wait for passport tap

@@ -107,29 +107,28 @@ func (d *Display) ShowAuthenticating() error {
 	return d.WriteImage(img)
 }
 
-// ShowProgress draws a progress bar at the top of the screen.
+// ShowProgress draws a centered progress bar on the screen.
 func (d *Display) ShowProgress(bytesRead, totalBytes int) error {
 	img := newScreen()
 
-	// Progress bar at top
-	drawProgressBar(img, bytesRead, totalBytes)
-
-	// Status text below
 	pct := 0
 	if totalBytes > 0 {
 		pct = bytesRead * 100 / totalBytes
 	}
 	text := fmt.Sprintf("READING PHOTO  %d%%", pct)
-	drawTextCentered(img, text, Width/2, 30, ScaleMedium, colorGold)
+	drawTextCentered(img, text, Width/2, Height/2-ScaleMedium*7-30, ScaleMedium, colorGold)
+
+	// Progress bar centered on screen
+	drawProgressBar(img, bytesRead, totalBytes)
 
 	return d.WriteImage(img)
 }
 
-// drawProgressBar draws a horizontal progress bar across the top of the screen.
+// drawProgressBar draws a horizontal progress bar centered on the screen.
 func drawProgressBar(img *image.RGBA, current, total int) {
-	const barY = 4
-	const barH = 12
-	const barMargin = 20
+	const barH = 28
+	const barMargin = 60
+	barY := Height/2 - barH/2
 
 	// Background bar
 	for x := barMargin; x < Width-barMargin; x++ {

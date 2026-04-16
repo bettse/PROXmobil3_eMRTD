@@ -4,7 +4,7 @@ Reads eMRTD (electronic Machine Readable Travel Documents) using the PROXmobil3'
 
 ## How It Works
 
-1. **MRZ Input**: Scan a QR code containing the MRZ via the built-in barcode reader, or pass it via `-mrz` flag
+1. **MRZ Input**: Scan a PDF417 barcode containing the MRZ via the built-in barcode reader, or pass it via `-mrz` flag
 2. **Tap Passport**: Place passport on the PROXmobil3's NFC reader
 3. **BAC Authentication**: Derives encryption keys from MRZ data (document number, DOB, DOE), performs mutual authentication with the passport chip
 4. **Read Data**: Reads DG1 (MRZ data) and DG2 (facial image) via secure messaging

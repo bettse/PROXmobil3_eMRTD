@@ -105,7 +105,7 @@ func readFile(reader *ipp.Reader, sec *sm.SecureMessaging, fid1, fid2 byte, prog
 	log.Printf("EF %02X%02X: TLV total=%d bytes (headerLen=%d, contentLen=%d)", fid1, fid2, fileSize, headerLen, totalLen)
 
 	// Read the full file in chunks
-	const chunkSize = 224 // conservative chunk size for secure messaging overhead
+	const chunkSize = 512 // larger chunks = fewer round-trips through cVEND proxy
 	data := make([]byte, 0, fileSize)
 	data = append(data, header...)
 

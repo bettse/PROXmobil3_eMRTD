@@ -25,15 +25,20 @@
   - Uses param_7=0x05 for SM APDUs (tells cVEND to forward response data)
 - [x] Display (internal/display/)
   - Framebuffer rendering (800x480 BGRA)
-  - Screens: booting, waiting for MRZ, waiting for card, authenticating, result, error
+  - Screens: booting, waiting for MRZ, waiting for card, authenticating, progress, result, error
+  - Centered progress bar with percentage during DG2 download
   - Passport data layout: surname first, given names, masked PII fields
   - JPEG face image decoded and rendered on right side of screen
+  - "SCAN MRZ QR CODE" prompt on result screen for continuous operation
 - [x] Main entry point (cmd/emrtd/main.go)
   - CLI flags: -mrz, -port, -barcode
   - Barcode scanner input (serial read with timeout-based completion detection)
   - Watchdog + keepalive goroutines
   - Card detection loop with post-detect delay
-  - 4-tone ascending startup beep
+  - 4-tone ascending startup beep, confirmation beep on MRZ scan
+- [x] Barcode scanner integration
+  - /dev/ttyUSB0 (FTDI FT231X), 115200 8N1, presentation mode
+  - Reads PDF417 MRZ data, no init commands needed
 - [x] Cross-compilation verified (GOOS=linux GOARCH=arm GOARM=7)
 - [x] Tested on device with real passport — DG1 + DG2 read successfully
 
@@ -46,15 +51,15 @@
 
 ## To Test Further
 
-- [ ] Barcode scanner MRZ QR code input
+- [x] Barcode scanner MRZ input
 - [x] Display rendering quality check
 - [x] Face image rendering on framebuffer
 - [ ] Error handling: wrong MRZ, card removed mid-read
 - [ ] Long-running stability
+- [ ] Chunk size tuning (currently 512 bytes, up from 224)
 
 ## Known Limitations
 
 - BAC only (no PACE support)
 - No TD1/TD2 MRZ format support (only TD3 passport)
 - Face image may be JPEG2000 (not decodable by Go stdlib)
-- Chunk size (224 bytes) is conservative
