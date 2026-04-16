@@ -48,7 +48,7 @@ On the PROXmobil3:
 
 - `-mrz`: MRZ line 2 (or full 2-line MRZ) — bypasses barcode scanner
 - `-port`: NFC reader serial port (default: `/dev/ttymxc3`)
-- `-barcode`: Barcode scanner serial port (default: `/dev/ttyS5`)
+- `-barcode`: Barcode scanner serial port (default: `/dev/ttyUSB0`)
 
 ## Architecture
 
