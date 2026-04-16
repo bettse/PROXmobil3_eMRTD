@@ -26,7 +26,7 @@ const (
 	watchdogInterval   = 30 * time.Second
 	cardWaitTimeout    = 120 * time.Second
 	postDetectDelay    = 100 * time.Millisecond
-	resultDisplayTime  = 8 * time.Second
+	resultDisplayTime  = 15 * time.Second
 )
 
 func main() {
@@ -183,15 +183,9 @@ func main() {
 			}
 			reader.Buzzer(2000, 150)
 
-			// When using barcode mode, keep showing results until next scan.
-			// The next iteration of the loop will show "SCAN MRZ QR CODE"
-			// via the result screen's bottom prompt, then block on barcode read.
-			if *mrzFlag != "" {
-				time.Sleep(resultDisplayTime)
-			}
-			// In barcode mode, fall through immediately — the result screen
-			// already shows "SCAN MRZ QR CODE" at the bottom, and the next
-			// loop iteration will block on readBarcode().
+			// Show result for 15s, then return to scan screen
+			time.Sleep(resultDisplayTime)
+			firstRun = true
 		}
 	}
 }

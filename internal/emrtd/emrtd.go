@@ -105,11 +105,12 @@ func readFile(reader *ipp.Reader, sec *sm.SecureMessaging, fid1, fid2 byte, prog
 	log.Printf("EF %02X%02X: TLV total=%d bytes (headerLen=%d, contentLen=%d)", fid1, fid2, fileSize, headerLen, totalLen)
 
 	// Read the full file in chunks
-	const chunkSize = 512 // larger chunks = fewer round-trips through cVEND proxy
+	const chunkSize = 2048 // larger chunks = fewer round-trips through cVEND proxy
 	data := make([]byte, 0, fileSize)
 	data = append(data, header...)
 
 	offset := len(header)
+	lastProgressPct := -1
 	for offset < fileSize {
 		remaining := fileSize - offset
 		readLen := chunkSize
@@ -124,7 +125,12 @@ func readFile(reader *ipp.Reader, sec *sm.SecureMessaging, fid1, fid2 byte, prog
 		data = append(data, chunk...)
 		offset += len(chunk)
 		if progress != nil {
-			progress(offset, fileSize)
+			// Throttle display updates to every 5% change
+			pct := offset * 100 / fileSize
+			if pct != lastProgressPct && (pct%5 == 0 || offset >= fileSize) {
+				progress(offset, fileSize)
+				lastProgressPct = pct
+			}
 		}
 		if len(chunk) == 0 {
 			break
