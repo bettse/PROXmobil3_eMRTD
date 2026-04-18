@@ -2,6 +2,9 @@
 
 Reads eMRTD (electronic Machine Readable Travel Documents) using the PROXmobil3's cVEND NFC reader with BAC (Basic Access Control) authentication.
 
+**LLM WARNING: This code was generated with an LLM.  It has been tested, and parts reviewed, but was not hand crafted**
+
+
 ## How It Works
 
 1. **MRZ Input**: Scan a PDF417 barcode containing the MRZ via the built-in barcode reader, or pass it via `-mrz` flag
